@@ -45,7 +45,7 @@ func ogrv1() {
 	}
 }
 
-func spliceSum(s []int) (sum int) {
+func spliceSum(s []uint16) (sum uint16) {
 	for _, i := range s {
 		if i == 0 {
 			return sum
@@ -55,7 +55,7 @@ func spliceSum(s []int) (sum int) {
 	return sum
 }
 
-func spliceSearch(n int, s []int) bool {
+func spliceSearch(n uint16, s []uint16) bool {
 	for _, i := range s {
 		if i == n {
 			return true
@@ -64,7 +64,7 @@ func spliceSearch(n int, s []int) bool {
 	return false
 }
 
-func ogrv2Internal(length, level int, max *int, l, d []int) {
+/*func ogrv2Internal(length, level int, max *int, l, d []int) {
 	if level == length-1 {
 		if curLen := spliceSum(l); curLen < *max {
 			*max = curLen
@@ -100,11 +100,59 @@ func ogrv2(length int) {
 	max := length * length
 	ogrv2Internal(length, 0, &max, l, d)
 }
+*/
+
+var countAll, countSum, prev uint64
+
+func ogrv3Internal(length, level, sum uint16, max *uint16, l, d []uint16) {
+	if level == length-1 {
+		countAll++
+		if countSum/1048576 > prev {
+			prev = countSum / 1048576
+			fmt.Printf("  all: %d, sum: %d, time: %v, current: %v\n", countAll, countSum, time.Now(), l)
+		}
+		if sum <= *max {
+			*max = sum
+			fmt.Printf("%d: %v\n", sum, l)
+		}
+		return
+	}
+	if sum > *max {
+		countSum++
+		return
+	}
+
+	lo := level * (level + 1) / 2
+	hi := lo + level
+ext:
+	for n := uint16(1); n < length*2; n++ {
+		if !spliceSearch(n, d[:lo]) {
+			l[level] = n
+			dist := uint16(0)
+			for i := lo; i <= hi; i++ {
+				//dist := spliceSum(l[i-lo : level+1])
+				dist += l[hi-i]
+				if spliceSearch(dist, d[:lo]) {
+					continue ext
+				}
+				d[i] = dist
+			}
+			ogrv3Internal(length, level+1, sum+n, max, l, d)
+		}
+	}
+}
+
+func ogrv3(length int) {
+	d := make([]uint16, length*(length-1)/2)
+	l := make([]uint16, length-1)
+	max := uint16(length * length)
+	ogrv3Internal(uint16(length), 0, 0, &max, l, d)
+}
 
 func main() {
 	//ogrv1()
 	startTime := time.Now()
-	ogrv2(11)
+	ogrv3(12)
 	endTime := time.Now()
 	fmt.Printf("start: %v\nend  : %v\n", startTime, endTime)
 }
