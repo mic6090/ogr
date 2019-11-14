@@ -1,11 +1,7 @@
-package main
+package ogr
 
-import (
-	"fmt"
-	"time"
-)
-
-func ogrv1(ogrLen int) {
+// <editor-fold defaultstate="collapsed">
+/* func Ogrv1(ogrLen int) {
 	bestLen := uint16(999)
 	buf := make([]uint16, ogrLen)
 	lens := make([]uint16, ogrLen*(ogrLen-1)/2)
@@ -43,6 +39,7 @@ func ogrv1(ogrLen int) {
 		}
 	}
 }
+*/ // </editor-fold>
 
 func spliceSum(s []uint16) (sum uint16) {
 	for _, i := range s {
@@ -95,7 +92,7 @@ ext:
 	}
 }
 
-func ogrv2(length int) []uint16 {
+func Ogrv2(length int) []uint16 {
 	d := make([]uint16, length*(length-1)/2)
 	l := make([]uint16, length-1)
 	max := uint16(length * length)
@@ -151,23 +148,10 @@ ext:
 	}
 }
 
-func ogrv3(length int) []uint16 {
+func Ogrv3(length int) []uint16 {
 	d := make([]uint16, length*(length-1)/2)
 	l := make([]uint16, length-1)
 	max = uint16(length * length)
 	ogrv3Internal(uint16(length), 0, 0, 1, l, d)
 	return best
-}
-
-func main() {
-	//n := 11
-	funcs := []func(int) []uint16{ogrv2, ogrv3}
-
-	for n := 2; n < 12; n++ {
-		for _, f := range funcs {
-			startTime := time.Now()
-			fmt.Printf("%v\n", f(n))
-			fmt.Printf("Duration: %d ms\n", time.Now().Sub(startTime).Milliseconds())
-		}
-	}
 }
