@@ -2,13 +2,10 @@ package main
 
 import (
 	"fmt"
-	"strconv"
-	"strings"
 	"time"
 )
 
-func ogrv1() {
-	ogrLen := 4
+func ogrv1(ogrLen int) {
 	bestLen := uint16(999)
 	buf := make([]uint16, ogrLen)
 	lens := make([]uint16, ogrLen*(ogrLen-1)/2)
@@ -58,6 +55,7 @@ func spliceSum(s []uint16) (sum uint16) {
 }
 
 func spliceSearch(n uint16, s []uint16) bool {
+	countSplice++
 	for _, i := range s {
 		if i == n {
 			return true
@@ -66,11 +64,12 @@ func spliceSearch(n uint16, s []uint16) bool {
 	return false
 }
 
-/*func ogrv2Internal(length, level int, max *int, l, d []int) {
+func ogrv2Internal(length, level uint16, max *uint16, l, d []uint16) {
 	if level == length-1 {
 		if curLen := spliceSum(l); curLen < *max {
 			*max = curLen
-			fmt.Printf("%d: %v\n", curLen, l)
+			//fmt.Printf("%d: %v\n", curLen, l)
+			best = append([]uint16(nil), l...)
 		}
 		return
 	}
@@ -81,7 +80,7 @@ func spliceSearch(n uint16, s []uint16) bool {
 	lo := level * (level + 1) / 2
 	hi := lo + level + 1
 ext:
-	for n := 1; n < length*2; n++ {
+	for n := uint16(1); n < length*2; n++ {
 		if !spliceSearch(n, d[:lo]) {
 			l[level] = n
 			for i := lo; i < hi; i++ {
@@ -96,28 +95,30 @@ ext:
 	}
 }
 
-func ogrv2(length int) {
-	d := make([]int, length*(length-1)/2)
-	l := make([]int, length-1)
-	max := length * length
-	ogrv2Internal(length, 0, &max, l, d)
+func ogrv2(length int) []uint16 {
+	d := make([]uint16, length*(length-1)/2)
+	l := make([]uint16, length-1)
+	max := uint16(length * length)
+	ogrv2Internal(uint16(length), 0, &max, l, d)
+	return best
 }
-*/
 
-var countAll, countSum, prev uint64
+var countAll, countSum, countSplice, prev uint64
 var dist uint16
 var max uint16
+var best []uint16
 
 func ogrv3Internal(length, level, sum, f uint16, l, d []uint16) {
 	if level == length-1 {
 		countAll++
 		if countSum/1048576/4 > prev {
 			prev = countSum / 1048576 / 4
-			fmt.Printf("  all: %d, sum: %d, time: %v, current: %v\n", countAll, countSum, time.Now(), l)
+			//fmt.Printf("  all: %d, sum: %d, splice: %d, time: %v, current: %v\n", countAll, countSum, countSplice, time.Now(), l)
 		}
-		if sum <= max {
+		if sum < max {
 			max = sum
-			fmt.Printf("%d: %v\n", sum, l)
+			//fmt.Printf("%d: %v\n", sum, l)
+			best = append([]uint16(nil), l...)
 		}
 		return
 	}
@@ -128,15 +129,19 @@ func ogrv3Internal(length, level, sum, f uint16, l, d []uint16) {
 
 	lo := level * (level + 1) / 2
 	hi := lo + level
+	spliceLookup := make([]bool, 1024)
+	for _, item := range d[:lo] {
+		spliceLookup[item] = true
+	}
 ext:
 	for n := uint16(1); n < length*f; n++ {
-		if !spliceSearch(n, d[:lo]) {
+		if !spliceLookup[n] {
 			l[level] = n
 			dist = n
 			d[lo] = n
 			for i := lo + 1; i <= hi; i++ {
 				dist += l[hi-i]
-				if spliceSearch(dist, d[:lo]) {
+				if spliceLookup[dist] {
 					continue ext
 				}
 				d[i] = dist
@@ -146,54 +151,23 @@ ext:
 	}
 }
 
-func ogrv3(length int) {
+func ogrv3(length int) []uint16 {
 	d := make([]uint16, length*(length-1)/2)
 	l := make([]uint16, length-1)
 	max = uint16(length * length)
 	ogrv3Internal(uint16(length), 0, 0, 1, l, d)
-}
-
-func maxdist(s string) int {
-	max := 0
-	prev := 0
-	for _, item := range strings.Split(s, " ") {
-		n, err := strconv.ParseInt(item, 10, 32)
-		if err == nil {
-			if max < int(n)-prev {
-				max = int(n) - prev
-				//fmt.Printf("%d-%d: %d\n", prev, n, max)
-			}
-			prev = int(n)
-		}
-	}
-	return max
+	return best
 }
 
 func main() {
-	//ogrv1()
-	startTime := time.Now()
-	ogrv3(10)
-	endTime := time.Now()
-	fmt.Printf("start: %v\nend  : %v\n", startTime, endTime)
-	//fmt.Println(maxdist("0 1 8 11 68 77 94 116 121 156 158 179 194 208 212 228 240 253 259 283"))
-	//fmt.Println(maxdist("0 2 24 56 77 82 83 95 129 144 179 186 195 255 265 285 293 296 310 329 333"))
-	//fmt.Println(maxdist("0 1 9 14 43 70 106 122 124 128 159 179 204 223 253 263 270 291 330 341 353 356"))
-	//fmt.Println(maxdist("0 3 7 17 61 66 91 99 114 159 171 199 200 226 235 246 277 316 329 348 350 366 372"))
-	//fmt.Println(maxdist("0 9 33 37 38 97 122 129 140 142 152 191 205 208 252 278 286 326 332 353 368 384 403 425"))
-	//fmt.Println(maxdist("0 12 29 39 72 91 146 157 160 161 166 191 207 214 258 290 316 354 372 394 396 431 459 467 480"))
-	//fmt.Println(maxdist("0 1 33 83 104 110 124 163 185 200 203 249 251 258 314 318 343 356 386 430 440 456 464 475 487 492"))
-	//fmt.Println(maxdist("0 3 15 41 66 95 97 106 142 152 220 221 225 242 295 330 338 354 382 388 402 415 486 504 523 546 553"))
-}
+	//n := 11
+	funcs := []func(int) []uint16{ogrv2, ogrv3}
 
-/*
-d1
-d1+d2
-d1+d2+d3
-d1+d2+d3+d4
-d2
-d2+d3
-d2+d3+d4
-d3
-d3+d4
-d4
-*/
+	for n := 2; n < 12; n++ {
+		for _, f := range funcs {
+			startTime := time.Now()
+			fmt.Printf("%v\n", f(n))
+			fmt.Printf("Duration: %d ms\n", time.Now().Sub(startTime).Milliseconds())
+		}
+	}
+}
